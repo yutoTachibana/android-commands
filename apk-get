@@ -1,0 +1,33 @@
+#!/bin/bash
+usage_exit() {
+  echo "apk-get, version 0.1d"
+  echo ""
+  echo "usage: apk-get [-s <specific device>] <package> [<save_name>]" 1>&2
+  echo ""
+  echo "-s <specific device>          - directs command to the device or emulator with the given"
+  echo "                                serial number or qualifier. Overrides ANDROID_SERIAL"
+  echo "                                environment variable."
+  exit 1
+}
+
+[ $# = 0 ] && usage_exit
+
+while getopts s:h OPT
+do
+    case $OPT in
+        s)  SERIAL=$2; shift 2
+            ;;
+        h)  usage_exit
+            ;;
+        *) usage_exit
+            ;;
+    esac
+done
+
+PACKAGE=$1
+DEST=$2
+if [ -n "$SERIAL" ]; then
+  adb -s $SERIAL shell pm list packages -f | grep $PACKAGE | sed "s/package:\(.*\)=.*/\1/g" | xargs -IAPP adb pull APP $DEST
+else
+  adb shell pm list packages -f | grep $PACKAGE | sed "s/package:\(.*\)=.*/\1/g" | xargs -IAPP adb pull APP $DEST
+fi
